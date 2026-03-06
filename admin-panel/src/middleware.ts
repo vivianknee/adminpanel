@@ -33,7 +33,11 @@ export default async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith("/protected")) {
+  if (
+    !user &&
+    (request.nextUrl.pathname.startsWith("/protected") ||
+      request.nextUrl.pathname.startsWith("/admin"))
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
