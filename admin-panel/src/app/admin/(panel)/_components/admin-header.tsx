@@ -5,13 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/app/theme-provider";
 import { createClient } from "@/app/utils/supabase/client";
-
-const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/images", label: "Images" },
-  { href: "/admin/captions", label: "Captions" },
-];
+import { NAV_GROUPS } from "./nav-config";
 
 export default function AdminHeader({ email }: { email: string }) {
   const { theme, toggle } = useTheme();
@@ -89,7 +83,7 @@ export default function AdminHeader({ email }: { email: string }) {
           onClick={() => setMobileOpen(false)}
         >
           <div
-            className="w-64 h-full p-4 space-y-2"
+            className="w-64 h-full p-4 overflow-y-auto"
             style={{ background: "var(--card-bg)" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -108,28 +102,44 @@ export default function AdminHeader({ email }: { email: string }) {
                 Close
               </button>
             </div>
-            {NAV_ITEMS.map((item) => {
-              const isActive =
-                item.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                  style={{
-                    background: isActive ? "var(--accent)" : "transparent",
-                    color: isActive
-                      ? "var(--accent-text)"
-                      : "var(--foreground)",
-                  }}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+            <div className="space-y-4">
+              {NAV_GROUPS.map((group, gi) => (
+                <div key={gi}>
+                  {group.label && (
+                    <div
+                      className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: "var(--muted)" }}
+                    >
+                      {group.label}
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const isActive =
+                        item.href === "/admin"
+                          ? pathname === "/admin"
+                          : pathname.startsWith(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                          style={{
+                            background: isActive ? "var(--accent)" : "transparent",
+                            color: isActive
+                              ? "var(--accent-text)"
+                              : "var(--foreground)",
+                          }}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
             <div
               className="border-t pt-3 mt-4"
               style={{ borderColor: "var(--card-border)" }}

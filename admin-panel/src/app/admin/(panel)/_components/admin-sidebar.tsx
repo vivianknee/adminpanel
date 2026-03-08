@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/images", label: "Images" },
-  { href: "/admin/captions", label: "Captions" },
-];
+import { NAV_GROUPS } from "./nav-config";
 
 export default function AdminSidebar() {
   const pathname = usePathname();
@@ -35,27 +29,41 @@ export default function AdminSidebar() {
         </p>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(item.href);
+      <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={gi}>
+            {group.label && (
+              <div
+                className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: "var(--muted)" }}
+              >
+                {group.label}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive =
+                  item.href === "/admin"
+                    ? pathname === "/admin"
+                    : pathname.startsWith(item.href);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-              style={{
-                background: isActive ? "var(--accent)" : "transparent",
-                color: isActive ? "var(--accent-text)" : "var(--foreground)",
-              }}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{
+                      background: isActive ? "var(--accent)" : "transparent",
+                      color: isActive ? "var(--accent-text)" : "var(--foreground)",
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div

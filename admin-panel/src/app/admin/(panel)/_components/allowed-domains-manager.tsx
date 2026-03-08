@@ -6,48 +6,41 @@ import DataTable, { type Column } from "./data-table";
 import ConfirmDialog from "./confirm-dialog";
 import FormModal, { type FieldConfig } from "./form-modal";
 
-type ImageRow = {
+type AllowedDomainRow = {
   id: number;
-  url: string;
-  image_description?: string;
   created_datetime_utc?: string;
+  apex_domain?: string;
   [key: string]: unknown;
 };
 
-const IMAGE_FIELDS: FieldConfig[] = [
+const FIELDS: FieldConfig[] = [
   {
-    key: "url",
-    label: "Image URL",
-    type: "url",
+    key: "apex_domain",
+    label: "Apex Domain",
+    type: "text",
     required: true,
-    placeholder: "https://example.com/image.jpg",
-  },
-  {
-    key: "image_description",
-    label: "Description",
-    type: "textarea",
-    placeholder: "Describe what is in this image...",
+    placeholder: "example.com",
   },
 ];
 
-export default function ImagesManager({
+export default function AllowedDomainsManager({
   initialData,
   totalCount,
   pageSize,
 }: {
-  initialData: ImageRow[];
+  initialData: AllowedDomainRow[];
   totalCount: number;
   pageSize: number;
 }) {
-  const [data, setData] = useState<ImageRow[]>(initialData);
+  const [data, setData] = useState<AllowedDomainRow[]>(initialData);
   const [count, setCount] = useState(totalCount);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingImage, setEditingImage] = useState<ImageRow | null>(null);
-  const [deletingImage, setDeletingImage] = useState<ImageRow | null>(null);
+  const [editingItem, setEditingItem] = useState<AllowedDomainRow | null>(null);
+  const [deletingItem, setDeletingItem] = useState<AllowedDomainRow | null>(null);
   const [message, setMessage] = useState<{
     text: string;
     type: "success" | "error";
@@ -65,15 +58,13 @@ export default function ImagesManager({
     const to = from + pageSize - 1;
 
     let query = supabase
-      .from("images")
+      .from("allowed_signup_domains")
       .select("*", { count: "exact" })
       .order("id", { ascending: false })
       .range(from, to);
 
     if (q) {
-      query = query.or(
-        `url.ilike.%${q}%,image_description.ilike.%${q}%`
-      );
+      query = query.ilike("apex_domain", `%${q}%`);
     }
 
     const { data: rows, count: total } = await query;
@@ -94,48 +85,44 @@ export default function ImagesManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
-    const { error } = await supabase.from("images").insert({
-      url: formData.url,
-      image_description: formData.image_description || null,
+    const { error } = await supabase.from("allowed_signup_domains").insert({
+      apex_domain: formData.apex_domain,
     });
     if (error) throw new Error(error.message);
-    showMessage("Image created successfully.", "success");
+    showMessage("Domain added successfully.", "success");
     fetchData(page, search);
   };
 
   const handleUpdate = async (formData: Record<string, unknown>) => {
-    if (!editingImage) return;
+    if (!editingItem) return;
     const supabase = createClient();
     const { error } = await supabase
-      .from("images")
-      .update({
-        url: formData.url,
-        image_description: formData.image_description || null,
-      })
-      .eq("id", editingImage.id);
+      .from("allowed_signup_domains")
+      .update({ apex_domain: formData.apex_domain })
+      .eq("id", editingItem.id);
     if (error) throw new Error(error.message);
-    showMessage("Image updated successfully.", "success");
-    setEditingImage(null);
+    showMessage("Domain updated successfully.", "success");
+    setEditingItem(null);
     fetchData(page, search);
   };
 
   const handleDelete = async () => {
-    if (!deletingImage) return;
+    if (!deletingItem) return;
     const supabase = createClient();
     const { error } = await supabase
-      .from("images")
+      .from("allowed_signup_domains")
       .delete()
-      .eq("id", deletingImage.id);
+      .eq("id", deletingItem.id);
     if (error) {
       showMessage(`Delete failed: ${error.message}`, "error");
     } else {
-      showMessage("Image deleted.", "success");
+      showMessage("Domain removed.", "success");
       fetchData(page, search);
     }
-    setDeletingImage(null);
+    setDeletingItem(null);
   };
 
-  const columns: Column<ImageRow>[] = [
+  const columns: Column<AllowedDomainRow>[] = [
     {
       key: "id",
       header: "ID",
@@ -146,42 +133,10 @@ export default function ImagesManager({
       ),
     },
     {
-      key: "thumbnail",
-      header: "Image",
+      key: "apex_domain",
+      header: "Apex Domain",
       render: (row) => (
-        <img
-          src={row.url}
-          alt=""
-          className="w-12 h-12 rounded-lg object-cover"
-          style={{ background: "var(--subtle-bg)" }}
-        />
-      ),
-    },
-    {
-      key: "url",
-      header: "URL",
-      render: (row) => (
-        <a
-          href={row.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs hover:underline truncate block max-w-xs"
-          style={{ color: "var(--accent)" }}
-        >
-          {row.url}
-        </a>
-      ),
-    },
-    {
-      key: "image_description",
-      header: "Description",
-      render: (row) => (
-        <span
-          className="text-xs truncate block max-w-xs"
-          style={{ color: row.image_description ? "var(--foreground)" : "var(--muted)" }}
-        >
-          {row.image_description || "—"}
-        </span>
+        <span className="text-sm font-medium">{row.apex_domain ?? "—"}</span>
       ),
     },
     {
@@ -217,7 +172,7 @@ export default function ImagesManager({
         </div>
       )}
 
-      <DataTable<ImageRow>
+      <DataTable<AllowedDomainRow>
         columns={columns}
         data={data}
         totalCount={count}
@@ -226,12 +181,12 @@ export default function ImagesManager({
         onPageChange={setPage}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search by URL or description..."
+        searchPlaceholder="Search domains..."
         isLoading={loading}
         headerActions={
           <button
             onClick={() => {
-              setEditingImage(null);
+              setEditingItem(null);
               setFormOpen(true);
             }}
             className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
@@ -246,14 +201,14 @@ export default function ImagesManager({
               (e.currentTarget.style.background = "var(--accent)")
             }
           >
-            Add Image
+            Add Domain
           </button>
         }
         actions={(row) => (
           <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => {
-                setEditingImage(row);
+                setEditingItem(row);
                 setFormOpen(true);
               }}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
@@ -271,7 +226,7 @@ export default function ImagesManager({
               Edit
             </button>
             <button
-              onClick={() => setDeletingImage(row)}
+              onClick={() => setDeletingItem(row)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               style={{ background: "#dc2626", color: "#fff" }}
               onMouseEnter={(e) =>
@@ -289,38 +244,23 @@ export default function ImagesManager({
 
       <FormModal
         isOpen={formOpen}
-        title={editingImage ? "Edit Image" : "Add Image"}
-        fields={IMAGE_FIELDS}
-        initialValues={editingImage ?? {}}
+        title={editingItem ? "Edit Domain" : "Add Domain"}
+        fields={FIELDS}
+        initialValues={editingItem ?? {}}
         onClose={() => {
           setFormOpen(false);
-          setEditingImage(null);
+          setEditingItem(null);
         }}
-        onSave={editingImage ? handleUpdate : handleCreate}
-        renderExtra={(values) =>
-          values.url ? (
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{ background: "var(--subtle-bg)" }}
-            >
-              <img
-                src={values.url}
-                alt="Preview"
-                className="w-full max-h-48 object-contain"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-            </div>
-          ) : null
-        }
+        onSave={editingItem ? handleUpdate : handleCreate}
       />
 
       <ConfirmDialog
-        isOpen={deletingImage !== null}
-        title="Delete Image"
-        message={`Are you sure you want to delete image #${deletingImage?.id}? This action cannot be undone and will also remove any associated captions.`}
+        isOpen={deletingItem !== null}
+        title="Delete Domain"
+        message={`Are you sure you want to remove "${deletingItem?.apex_domain}" from allowed signup domains?`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
-        onCancel={() => setDeletingImage(null)}
+        onCancel={() => setDeletingItem(null)}
       />
     </>
   );

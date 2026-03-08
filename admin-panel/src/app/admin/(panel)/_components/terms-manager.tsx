@@ -6,48 +6,64 @@ import DataTable, { type Column } from "./data-table";
 import ConfirmDialog from "./confirm-dialog";
 import FormModal, { type FieldConfig } from "./form-modal";
 
-type ImageRow = {
+type TermRow = {
   id: number;
-  url: string;
-  image_description?: string;
   created_datetime_utc?: string;
+  term?: string;
+  definition?: string;
+  example?: string;
+  term_type_id?: number;
   [key: string]: unknown;
 };
 
-const IMAGE_FIELDS: FieldConfig[] = [
+const FIELDS: FieldConfig[] = [
   {
-    key: "url",
-    label: "Image URL",
-    type: "url",
+    key: "term",
+    label: "Term",
+    type: "text",
     required: true,
-    placeholder: "https://example.com/image.jpg",
+    placeholder: "Enter the term",
   },
   {
-    key: "image_description",
-    label: "Description",
+    key: "definition",
+    label: "Definition",
     type: "textarea",
-    placeholder: "Describe what is in this image...",
+    required: true,
+    placeholder: "Definition of the term",
+  },
+  {
+    key: "example",
+    label: "Example",
+    type: "textarea",
+    placeholder: "Example usage",
+  },
+  {
+    key: "term_type_id",
+    label: "Term Type ID",
+    type: "number",
+    required: true,
+    placeholder: "Term type ID",
   },
 ];
 
-export default function ImagesManager({
+export default function TermsManager({
   initialData,
   totalCount,
   pageSize,
 }: {
-  initialData: ImageRow[];
+  initialData: TermRow[];
   totalCount: number;
   pageSize: number;
 }) {
-  const [data, setData] = useState<ImageRow[]>(initialData);
+  const [data, setData] = useState<TermRow[]>(initialData);
   const [count, setCount] = useState(totalCount);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingImage, setEditingImage] = useState<ImageRow | null>(null);
-  const [deletingImage, setDeletingImage] = useState<ImageRow | null>(null);
+  const [editingItem, setEditingItem] = useState<TermRow | null>(null);
+  const [deletingItem, setDeletingItem] = useState<TermRow | null>(null);
   const [message, setMessage] = useState<{
     text: string;
     type: "success" | "error";
@@ -65,14 +81,14 @@ export default function ImagesManager({
     const to = from + pageSize - 1;
 
     let query = supabase
-      .from("images")
+      .from("terms")
       .select("*", { count: "exact" })
       .order("id", { ascending: false })
       .range(from, to);
 
     if (q) {
       query = query.or(
-        `url.ilike.%${q}%,image_description.ilike.%${q}%`
+        `term.ilike.%${q}%,definition.ilike.%${q}%`
       );
     }
 
@@ -94,48 +110,52 @@ export default function ImagesManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
-    const { error } = await supabase.from("images").insert({
-      url: formData.url,
-      image_description: formData.image_description || null,
+    const { error } = await supabase.from("terms").insert({
+      term: formData.term,
+      definition: formData.definition,
+      example: formData.example || null,
+      term_type_id: formData.term_type_id,
     });
     if (error) throw new Error(error.message);
-    showMessage("Image created successfully.", "success");
+    showMessage("Term created successfully.", "success");
     fetchData(page, search);
   };
 
   const handleUpdate = async (formData: Record<string, unknown>) => {
-    if (!editingImage) return;
+    if (!editingItem) return;
     const supabase = createClient();
     const { error } = await supabase
-      .from("images")
+      .from("terms")
       .update({
-        url: formData.url,
-        image_description: formData.image_description || null,
+        term: formData.term,
+        definition: formData.definition,
+        example: formData.example || null,
+        term_type_id: formData.term_type_id,
       })
-      .eq("id", editingImage.id);
+      .eq("id", editingItem.id);
     if (error) throw new Error(error.message);
-    showMessage("Image updated successfully.", "success");
-    setEditingImage(null);
+    showMessage("Term updated successfully.", "success");
+    setEditingItem(null);
     fetchData(page, search);
   };
 
   const handleDelete = async () => {
-    if (!deletingImage) return;
+    if (!deletingItem) return;
     const supabase = createClient();
     const { error } = await supabase
-      .from("images")
+      .from("terms")
       .delete()
-      .eq("id", deletingImage.id);
+      .eq("id", deletingItem.id);
     if (error) {
       showMessage(`Delete failed: ${error.message}`, "error");
     } else {
-      showMessage("Image deleted.", "success");
+      showMessage("Term deleted.", "success");
       fetchData(page, search);
     }
-    setDeletingImage(null);
+    setDeletingItem(null);
   };
 
-  const columns: Column<ImageRow>[] = [
+  const columns: Column<TermRow>[] = [
     {
       key: "id",
       header: "ID",
@@ -146,42 +166,41 @@ export default function ImagesManager({
       ),
     },
     {
-      key: "thumbnail",
-      header: "Image",
+      key: "term",
+      header: "Term",
       render: (row) => (
-        <img
-          src={row.url}
-          alt=""
-          className="w-12 h-12 rounded-lg object-cover"
-          style={{ background: "var(--subtle-bg)" }}
-        />
+        <span className="text-sm font-medium">{row.term ?? "—"}</span>
       ),
     },
     {
-      key: "url",
-      header: "URL",
-      render: (row) => (
-        <a
-          href={row.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs hover:underline truncate block max-w-xs"
-          style={{ color: "var(--accent)" }}
-        >
-          {row.url}
-        </a>
-      ),
-    },
-    {
-      key: "image_description",
-      header: "Description",
+      key: "definition",
+      header: "Definition",
       render: (row) => (
         <span
-          className="text-xs truncate block max-w-xs"
-          style={{ color: row.image_description ? "var(--foreground)" : "var(--muted)" }}
+          className="text-xs truncate block max-w-[250px]"
+          style={{ color: row.definition ? "var(--foreground)" : "var(--muted)" }}
         >
-          {row.image_description || "—"}
+          {row.definition || "—"}
         </span>
+      ),
+    },
+    {
+      key: "example",
+      header: "Example",
+      render: (row) => (
+        <span
+          className="text-xs truncate block max-w-[200px]"
+          style={{ color: row.example ? "var(--foreground)" : "var(--muted)" }}
+        >
+          {row.example || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "term_type_id",
+      header: "Type ID",
+      render: (row) => (
+        <span className="text-xs">{row.term_type_id ?? "—"}</span>
       ),
     },
     {
@@ -217,7 +236,7 @@ export default function ImagesManager({
         </div>
       )}
 
-      <DataTable<ImageRow>
+      <DataTable<TermRow>
         columns={columns}
         data={data}
         totalCount={count}
@@ -226,12 +245,12 @@ export default function ImagesManager({
         onPageChange={setPage}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search by URL or description..."
+        searchPlaceholder="Search terms..."
         isLoading={loading}
         headerActions={
           <button
             onClick={() => {
-              setEditingImage(null);
+              setEditingItem(null);
               setFormOpen(true);
             }}
             className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
@@ -246,14 +265,14 @@ export default function ImagesManager({
               (e.currentTarget.style.background = "var(--accent)")
             }
           >
-            Add Image
+            Add Term
           </button>
         }
         actions={(row) => (
           <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => {
-                setEditingImage(row);
+                setEditingItem(row);
                 setFormOpen(true);
               }}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
@@ -271,7 +290,7 @@ export default function ImagesManager({
               Edit
             </button>
             <button
-              onClick={() => setDeletingImage(row)}
+              onClick={() => setDeletingItem(row)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               style={{ background: "#dc2626", color: "#fff" }}
               onMouseEnter={(e) =>
@@ -289,38 +308,23 @@ export default function ImagesManager({
 
       <FormModal
         isOpen={formOpen}
-        title={editingImage ? "Edit Image" : "Add Image"}
-        fields={IMAGE_FIELDS}
-        initialValues={editingImage ?? {}}
+        title={editingItem ? "Edit Term" : "Add Term"}
+        fields={FIELDS}
+        initialValues={editingItem ?? {}}
         onClose={() => {
           setFormOpen(false);
-          setEditingImage(null);
+          setEditingItem(null);
         }}
-        onSave={editingImage ? handleUpdate : handleCreate}
-        renderExtra={(values) =>
-          values.url ? (
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{ background: "var(--subtle-bg)" }}
-            >
-              <img
-                src={values.url}
-                alt="Preview"
-                className="w-full max-h-48 object-contain"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-            </div>
-          ) : null
-        }
+        onSave={editingItem ? handleUpdate : handleCreate}
       />
 
       <ConfirmDialog
-        isOpen={deletingImage !== null}
-        title="Delete Image"
-        message={`Are you sure you want to delete image #${deletingImage?.id}? This action cannot be undone and will also remove any associated captions.`}
+        isOpen={deletingItem !== null}
+        title="Delete Term"
+        message={`Are you sure you want to delete the term "${deletingItem?.term}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
-        onCancel={() => setDeletingImage(null)}
+        onCancel={() => setDeletingItem(null)}
       />
     </>
   );

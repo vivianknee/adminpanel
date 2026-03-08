@@ -6,48 +6,64 @@ import DataTable, { type Column } from "./data-table";
 import ConfirmDialog from "./confirm-dialog";
 import FormModal, { type FieldConfig } from "./form-modal";
 
-type ImageRow = {
+type CaptionExampleRow = {
   id: number;
-  url: string;
-  image_description?: string;
   created_datetime_utc?: string;
+  image_description?: string;
+  caption?: string;
+  explanation?: string;
+  image_id?: number;
   [key: string]: unknown;
 };
 
-const IMAGE_FIELDS: FieldConfig[] = [
+const FIELDS: FieldConfig[] = [
   {
-    key: "url",
-    label: "Image URL",
-    type: "url",
+    key: "image_id",
+    label: "Image ID",
+    type: "number",
     required: true,
-    placeholder: "https://example.com/image.jpg",
+    placeholder: "Image ID",
   },
   {
     key: "image_description",
-    label: "Description",
+    label: "Image Description",
     type: "textarea",
-    placeholder: "Describe what is in this image...",
+    required: true,
+    placeholder: "Description of the image...",
+  },
+  {
+    key: "caption",
+    label: "Caption",
+    type: "textarea",
+    required: true,
+    placeholder: "The example caption...",
+  },
+  {
+    key: "explanation",
+    label: "Explanation",
+    type: "textarea",
+    placeholder: "Why this caption works...",
   },
 ];
 
-export default function ImagesManager({
+export default function CaptionExamplesManager({
   initialData,
   totalCount,
   pageSize,
 }: {
-  initialData: ImageRow[];
+  initialData: CaptionExampleRow[];
   totalCount: number;
   pageSize: number;
 }) {
-  const [data, setData] = useState<ImageRow[]>(initialData);
+  const [data, setData] = useState<CaptionExampleRow[]>(initialData);
   const [count, setCount] = useState(totalCount);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingImage, setEditingImage] = useState<ImageRow | null>(null);
-  const [deletingImage, setDeletingImage] = useState<ImageRow | null>(null);
+  const [editingItem, setEditingItem] = useState<CaptionExampleRow | null>(null);
+  const [deletingItem, setDeletingItem] = useState<CaptionExampleRow | null>(null);
   const [message, setMessage] = useState<{
     text: string;
     type: "success" | "error";
@@ -65,14 +81,14 @@ export default function ImagesManager({
     const to = from + pageSize - 1;
 
     let query = supabase
-      .from("images")
+      .from("caption_examples")
       .select("*", { count: "exact" })
       .order("id", { ascending: false })
       .range(from, to);
 
     if (q) {
       query = query.or(
-        `url.ilike.%${q}%,image_description.ilike.%${q}%`
+        `caption.ilike.%${q}%,image_description.ilike.%${q}%`
       );
     }
 
@@ -94,48 +110,52 @@ export default function ImagesManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
-    const { error } = await supabase.from("images").insert({
-      url: formData.url,
-      image_description: formData.image_description || null,
+    const { error } = await supabase.from("caption_examples").insert({
+      image_id: formData.image_id,
+      image_description: formData.image_description,
+      caption: formData.caption,
+      explanation: formData.explanation || null,
     });
     if (error) throw new Error(error.message);
-    showMessage("Image created successfully.", "success");
+    showMessage("Caption example created successfully.", "success");
     fetchData(page, search);
   };
 
   const handleUpdate = async (formData: Record<string, unknown>) => {
-    if (!editingImage) return;
+    if (!editingItem) return;
     const supabase = createClient();
     const { error } = await supabase
-      .from("images")
+      .from("caption_examples")
       .update({
-        url: formData.url,
-        image_description: formData.image_description || null,
+        image_id: formData.image_id,
+        image_description: formData.image_description,
+        caption: formData.caption,
+        explanation: formData.explanation || null,
       })
-      .eq("id", editingImage.id);
+      .eq("id", editingItem.id);
     if (error) throw new Error(error.message);
-    showMessage("Image updated successfully.", "success");
-    setEditingImage(null);
+    showMessage("Caption example updated successfully.", "success");
+    setEditingItem(null);
     fetchData(page, search);
   };
 
   const handleDelete = async () => {
-    if (!deletingImage) return;
+    if (!deletingItem) return;
     const supabase = createClient();
     const { error } = await supabase
-      .from("images")
+      .from("caption_examples")
       .delete()
-      .eq("id", deletingImage.id);
+      .eq("id", deletingItem.id);
     if (error) {
       showMessage(`Delete failed: ${error.message}`, "error");
     } else {
-      showMessage("Image deleted.", "success");
+      showMessage("Caption example deleted.", "success");
       fetchData(page, search);
     }
-    setDeletingImage(null);
+    setDeletingItem(null);
   };
 
-  const columns: Column<ImageRow>[] = [
+  const columns: Column<CaptionExampleRow>[] = [
     {
       key: "id",
       header: "ID",
@@ -146,41 +166,45 @@ export default function ImagesManager({
       ),
     },
     {
-      key: "thumbnail",
-      header: "Image",
+      key: "image_id",
+      header: "Image ID",
       render: (row) => (
-        <img
-          src={row.url}
-          alt=""
-          className="w-12 h-12 rounded-lg object-cover"
-          style={{ background: "var(--subtle-bg)" }}
-        />
-      ),
-    },
-    {
-      key: "url",
-      header: "URL",
-      render: (row) => (
-        <a
-          href={row.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs hover:underline truncate block max-w-xs"
-          style={{ color: "var(--accent)" }}
-        >
-          {row.url}
-        </a>
+        <span className="text-sm">{row.image_id ?? "—"}</span>
       ),
     },
     {
       key: "image_description",
-      header: "Description",
+      header: "Image Desc",
       render: (row) => (
         <span
-          className="text-xs truncate block max-w-xs"
+          className="text-xs truncate block max-w-[200px]"
           style={{ color: row.image_description ? "var(--foreground)" : "var(--muted)" }}
         >
           {row.image_description || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "caption",
+      header: "Caption",
+      render: (row) => (
+        <span
+          className="text-xs truncate block max-w-[200px]"
+          style={{ color: row.caption ? "var(--foreground)" : "var(--muted)" }}
+        >
+          {row.caption || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "explanation",
+      header: "Explanation",
+      render: (row) => (
+        <span
+          className="text-xs truncate block max-w-[200px]"
+          style={{ color: row.explanation ? "var(--foreground)" : "var(--muted)" }}
+        >
+          {row.explanation || "—"}
         </span>
       ),
     },
@@ -217,7 +241,7 @@ export default function ImagesManager({
         </div>
       )}
 
-      <DataTable<ImageRow>
+      <DataTable<CaptionExampleRow>
         columns={columns}
         data={data}
         totalCount={count}
@@ -226,12 +250,12 @@ export default function ImagesManager({
         onPageChange={setPage}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search by URL or description..."
+        searchPlaceholder="Search by caption or description..."
         isLoading={loading}
         headerActions={
           <button
             onClick={() => {
-              setEditingImage(null);
+              setEditingItem(null);
               setFormOpen(true);
             }}
             className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
@@ -246,14 +270,14 @@ export default function ImagesManager({
               (e.currentTarget.style.background = "var(--accent)")
             }
           >
-            Add Image
+            Add Example
           </button>
         }
         actions={(row) => (
           <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => {
-                setEditingImage(row);
+                setEditingItem(row);
                 setFormOpen(true);
               }}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
@@ -271,7 +295,7 @@ export default function ImagesManager({
               Edit
             </button>
             <button
-              onClick={() => setDeletingImage(row)}
+              onClick={() => setDeletingItem(row)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               style={{ background: "#dc2626", color: "#fff" }}
               onMouseEnter={(e) =>
@@ -289,38 +313,23 @@ export default function ImagesManager({
 
       <FormModal
         isOpen={formOpen}
-        title={editingImage ? "Edit Image" : "Add Image"}
-        fields={IMAGE_FIELDS}
-        initialValues={editingImage ?? {}}
+        title={editingItem ? "Edit Caption Example" : "Add Caption Example"}
+        fields={FIELDS}
+        initialValues={editingItem ?? {}}
         onClose={() => {
           setFormOpen(false);
-          setEditingImage(null);
+          setEditingItem(null);
         }}
-        onSave={editingImage ? handleUpdate : handleCreate}
-        renderExtra={(values) =>
-          values.url ? (
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{ background: "var(--subtle-bg)" }}
-            >
-              <img
-                src={values.url}
-                alt="Preview"
-                className="w-full max-h-48 object-contain"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-            </div>
-          ) : null
-        }
+        onSave={editingItem ? handleUpdate : handleCreate}
       />
 
       <ConfirmDialog
-        isOpen={deletingImage !== null}
-        title="Delete Image"
-        message={`Are you sure you want to delete image #${deletingImage?.id}? This action cannot be undone and will also remove any associated captions.`}
+        isOpen={deletingItem !== null}
+        title="Delete Caption Example"
+        message={`Are you sure you want to delete caption example #${deletingItem?.id}? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
-        onCancel={() => setDeletingImage(null)}
+        onCancel={() => setDeletingItem(null)}
       />
     </>
   );
