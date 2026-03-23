@@ -171,6 +171,13 @@ export default function CaptionsTable({
       onSearchChange={setSearch}
       searchPlaceholder="Search caption text..."
       isLoading={loading}
+      exportFilename="captions"
+      exportColumns={[
+        { header: "ID", value: (row) => String(row.id) },
+        { header: "Caption", value: (row) => row.content },
+        { header: "Likes", value: (row) => String(row.like_count) },
+        { header: "Created", value: (row) => row.created_datetime_utc ?? "" },
+      ]}
     />
   );
 }

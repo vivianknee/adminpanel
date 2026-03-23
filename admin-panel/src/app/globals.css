@@ -31,6 +31,14 @@
   --vote-down-hover-text: #b91c1c;
   --success-text: #16a34a;
   --error-text: #dc2626;
+  --chart-1: #7c3aed;
+  --chart-2: #06b6d4;
+  --chart-3: #f59e0b;
+  --chart-4: #10b981;
+  --chart-5: #f43f5e;
+  --chart-6: #8b5cf6;
+  --bulk-bar-bg: #7c3aed;
+  --bulk-bar-text: #ffffff;
 }
 
 .dark {
@@ -64,6 +72,14 @@
   --vote-down-hover-text: #fca5a5;
   --success-text: #4ade80;
   --error-text: #fca5a5;
+  --chart-1: #a78bfa;
+  --chart-2: #22d3ee;
+  --chart-3: #fbbf24;
+  --chart-4: #34d399;
+  --chart-5: #fb7185;
+  --chart-6: #c4b5fd;
+  --bulk-bar-bg: #a78bfa;
+  --bulk-bar-text: #13111c;
 }
 
 @theme inline {

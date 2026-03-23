@@ -233,6 +233,27 @@ export default function ImagesManager({
         onSearchChange={setSearch}
         searchPlaceholder="Search by URL or description..."
         isLoading={loading}
+        exportFilename="images"
+        exportColumns={[
+          { header: "ID", value: (row) => String(row.id) },
+          { header: "URL", value: (row) => row.url },
+          { header: "Description", value: (row) => row.image_description ?? "" },
+          { header: "Created", value: (row) => row.created_datetime_utc ?? "" },
+        ]}
+        selectable
+        onBulkDelete={async (ids) => {
+          const supabase = createClient();
+          const { error } = await supabase
+            .from("images")
+            .delete()
+            .in("id", ids);
+          if (error) {
+            showMessage(`Bulk delete failed: ${error.message}`, "error");
+          } else {
+            showMessage(`${ids.length} image(s) deleted.`, "success");
+            fetchData(page, search);
+          }
+        }}
         headerActions={
           <button
             onClick={() => {

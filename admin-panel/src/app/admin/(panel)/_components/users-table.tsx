@@ -139,6 +139,15 @@ export default function UsersTable({
       onSearchChange={setSearch}
       searchPlaceholder="Search by email or name..."
       isLoading={loading}
+      exportFilename="users"
+      exportColumns={[
+        { header: "ID", value: (row) => row.id },
+        { header: "Email", value: (row) => row.email ?? "" },
+        { header: "Username", value: (row) => row.username ?? "" },
+        { header: "Display Name", value: (row) => row.display_name ?? "" },
+        { header: "Role", value: (row) => row.is_superadmin ? "Superadmin" : "User" },
+        { header: "Created", value: (row) => row.created_datetime_utc ?? "" },
+      ]}
     />
   );
 }

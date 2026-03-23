@@ -252,6 +252,29 @@ export default function TermsManager({
         onSearchChange={setSearch}
         searchPlaceholder="Search terms..."
         isLoading={loading}
+        exportFilename="terms"
+        exportColumns={[
+          { header: "ID", value: (row) => String(row.id) },
+          { header: "Term", value: (row) => row.term ?? "" },
+          { header: "Definition", value: (row) => row.definition ?? "" },
+          { header: "Example", value: (row) => row.example ?? "" },
+          { header: "Type ID", value: (row) => String(row.term_type_id ?? "") },
+          { header: "Created", value: (row) => row.created_datetime_utc ?? "" },
+        ]}
+        selectable
+        onBulkDelete={async (ids) => {
+          const supabase = createClient();
+          const { error } = await supabase
+            .from("terms")
+            .delete()
+            .in("id", ids);
+          if (error) {
+            showMessage(`Bulk delete failed: ${error.message}`, "error");
+          } else {
+            showMessage(`${ids.length} term(s) deleted.`, "success");
+            fetchData(page, search);
+          }
+        }}
         headerActions={
           <button
             onClick={() => {
