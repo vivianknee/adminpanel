@@ -94,9 +94,12 @@ export default function ImagesManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("images").insert({
       url: formData.url,
       image_description: formData.image_description || null,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Image created successfully.", "success");
@@ -106,11 +109,13 @@ export default function ImagesManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingImage) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("images")
       .update({
         url: formData.url,
         image_description: formData.image_description || null,
+        modified_by_user_id: user!.id,
       })
       .eq("id", editingImage.id);
     if (error) throw new Error(error.message);

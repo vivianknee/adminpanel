@@ -103,10 +103,13 @@ export default function LlmModelsManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("llm_models").insert({
       name: formData.name,
       llm_provider_id: formData.llm_provider_id,
       provider_model_id: formData.provider_model_id,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Model created successfully.", "success");
@@ -116,12 +119,14 @@ export default function LlmModelsManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("llm_models")
       .update({
         name: formData.name,
         llm_provider_id: formData.llm_provider_id,
         provider_model_id: formData.provider_model_id,
+        modified_by_user_id: user!.id,
       })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);

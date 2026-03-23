@@ -95,11 +95,13 @@ export default function HumorMixManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("humor_flavor_mix")
       .update({
         humor_flavor_id: formData.humor_flavor_id,
         caption_count: formData.caption_count,
+        modified_by_user_id: user!.id,
       })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);

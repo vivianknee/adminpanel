@@ -85,8 +85,11 @@ export default function LlmProvidersManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("llm_providers").insert({
       name: formData.name,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Provider created successfully.", "success");
@@ -96,9 +99,13 @@ export default function LlmProvidersManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("llm_providers")
-      .update({ name: formData.name })
+      .update({
+        name: formData.name,
+        modified_by_user_id: user!.id,
+      })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);
     showMessage("Provider updated successfully.", "success");

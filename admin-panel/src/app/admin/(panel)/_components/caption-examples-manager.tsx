@@ -110,11 +110,14 @@ export default function CaptionExamplesManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("caption_examples").insert({
       image_id: formData.image_id,
       image_description: formData.image_description,
       caption: formData.caption,
       explanation: formData.explanation || null,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Caption example created successfully.", "success");
@@ -124,6 +127,7 @@ export default function CaptionExamplesManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("caption_examples")
       .update({
@@ -131,6 +135,7 @@ export default function CaptionExamplesManager({
         image_description: formData.image_description,
         caption: formData.caption,
         explanation: formData.explanation || null,
+        modified_by_user_id: user!.id,
       })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);

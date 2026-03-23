@@ -110,11 +110,14 @@ export default function TermsManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("terms").insert({
       term: formData.term,
       definition: formData.definition,
       example: formData.example || null,
       term_type_id: formData.term_type_id,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Term created successfully.", "success");
@@ -124,6 +127,7 @@ export default function TermsManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("terms")
       .update({
@@ -131,6 +135,7 @@ export default function TermsManager({
         definition: formData.definition,
         example: formData.example || null,
         term_type_id: formData.term_type_id,
+        modified_by_user_id: user!.id,
       })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);

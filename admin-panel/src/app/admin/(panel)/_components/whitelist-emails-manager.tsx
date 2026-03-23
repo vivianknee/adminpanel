@@ -85,8 +85,11 @@ export default function WhitelistEmailsManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("whitelist_email_addresses").insert({
       email_address: formData.email_address,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Email added to whitelist.", "success");
@@ -96,9 +99,13 @@ export default function WhitelistEmailsManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("whitelist_email_addresses")
-      .update({ email_address: formData.email_address })
+      .update({
+        email_address: formData.email_address,
+        modified_by_user_id: user!.id,
+      })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);
     showMessage("Email updated successfully.", "success");

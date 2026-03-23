@@ -85,8 +85,11 @@ export default function AllowedDomainsManager({
 
   const handleCreate = async (formData: Record<string, unknown>) => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("allowed_signup_domains").insert({
       apex_domain: formData.apex_domain,
+      created_by_user_id: user!.id,
+      modified_by_user_id: user!.id,
     });
     if (error) throw new Error(error.message);
     showMessage("Domain added successfully.", "success");
@@ -96,9 +99,13 @@ export default function AllowedDomainsManager({
   const handleUpdate = async (formData: Record<string, unknown>) => {
     if (!editingItem) return;
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("allowed_signup_domains")
-      .update({ apex_domain: formData.apex_domain })
+      .update({
+        apex_domain: formData.apex_domain,
+        modified_by_user_id: user!.id,
+      })
       .eq("id", editingItem.id);
     if (error) throw new Error(error.message);
     showMessage("Domain updated successfully.", "success");
