@@ -54,6 +54,13 @@ export default function Home() {
           Sign in with Google
         </button>
       </div>
+
+      <p
+        className="absolute bottom-6 text-xs"
+        style={{ color: "var(--muted)" }}
+      >
+        Admin Panel v1.0
+      </p>
     </div>
   );
 }
