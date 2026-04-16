@@ -13,6 +13,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/images", label: "Images" },
       { href: "/admin/captions", label: "Captions" },
+      { href: "/admin/caption-ratings", label: "Caption Ratings" },
       { href: "/admin/caption-examples", label: "Caption Examples" },
       { href: "/admin/caption-requests", label: "Caption Requests" },
     ],
